@@ -13,17 +13,19 @@ import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 
 class FTCFieldSwitcher:
-    def __init__(self, event_code, obs_host="localhost", obs_port=4444, obs_password=""):
+    def __init__(self, event_code, scoring_host="localhost", obs_host="localhost", obs_port=4455, obs_password=""):
         """
         Initialize the FTC Field Switcher with WebSocket connection details and OBS parameters
         
         Args:
             event_code: FTC event code for the WebSocket connection
+            scoring_host: Host address for the FTC scoring system (default: localhost)
             obs_host: OBS WebSocket host (default: localhost)
-            obs_port: OBS WebSocket port (default: 4444)
+            obs_port: OBS WebSocket port (default: 4455)
             obs_password: OBS WebSocket password (default: empty string)
         """
-        self.ftc_ws_url = f"ws://localhost:8080/stream/display/command/?code={event_code}"
+        self.scoring_host = scoring_host
+        self.ftc_ws_url = f"ws://{scoring_host}:8080/stream/display/command/?code={event_code}"
         self.event_code = event_code
         self.obs_host = obs_host
         self.obs_port = obs_port
@@ -33,7 +35,6 @@ class FTCFieldSwitcher:
         self.field_scene_mapping = {
             1: "Field 1",
             2: "Field 2",
-            # Add more field-to-scene mappings as needed
         }
         self.running = False
         self.ftc_websocket = None
@@ -120,7 +121,7 @@ class FTCFieldSwitcher:
         """
         Gracefully shutdown the monitoring
         """
-        self.log("\nShutting down...")
+        self.log("Shutting down...")
         self.running = False
         
         # Close FTC WebSocket if it exists
@@ -172,6 +173,9 @@ class FTCFieldSwitcher:
                     except json.JSONDecodeError as e:
                         if message != "pong": # This is expected to show up periodically
                             self.log(f"Error decoding message: {e}")
+                    except websockets.exceptions.ConnectionClosed as e:
+                        if self.running:  # Only print errors if we're still supposed to be running
+                            raise
                     except Exception as e:
                         if self.running:  # Only print errors if we're still supposed to be running
                             self.log(f"Error processing message: {e}")
@@ -179,10 +183,11 @@ class FTCFieldSwitcher:
         except asyncio.CancelledError:
             self.log("WebSocket monitoring cancelled")
         except websockets.exceptions.ConnectionClosed:
-            self.log("Connection to FTC scoring system closed")
+            self.log("Connection to FTC scoring system closed.  Is the scoring server still running, and is the event code correct?")
         except Exception as e:
             if self.running:  # Only print errors if we're still supposed to be running
                 self.log(f"WebSocket error: {e}")
+                self.log(f"Is the scoring system host correct?")
         finally:
             await self.shutdown()
 
@@ -220,19 +225,23 @@ class FTCSwitcherGUI:
         ttk.Label(conn_frame, text="Event Code:").grid(row=1, column=0, sticky=tk.W, pady=2)
         self.event_code_var = tk.StringVar()
         ttk.Entry(conn_frame, textvariable=self.event_code_var, width=30).grid(row=1, column=1, sticky=tk.W, pady=2)
-        
+
+        ttk.Label(conn_frame, text="Scoring System Host:").grid(row=2, column=0, sticky=tk.W, pady=2)
+        self.scoring_host_var = tk.StringVar(value="localhost")
+        ttk.Entry(conn_frame, textvariable=self.scoring_host_var, width=30).grid(row=2, column=1, sticky=tk.W, pady=2)
+
         # OBS Settings
-        ttk.Label(conn_frame, text="OBS Settings", font=("", 12, "bold")).grid(row=2, column=0, columnspan=2, sticky=tk.W, pady=(10, 5))
+        ttk.Label(conn_frame, text="OBS Settings", font=("", 12, "bold")).grid(row=3, column=0, columnspan=2, sticky=tk.W, pady=(10, 5))
         
-        ttk.Label(conn_frame, text="Host:").grid(row=3, column=0, sticky=tk.W, pady=2)
+        ttk.Label(conn_frame, text="Host:").grid(row=4, column=0, sticky=tk.W, pady=2)
         self.obs_host_var = tk.StringVar(value="localhost")
         ttk.Entry(conn_frame, textvariable=self.obs_host_var, width=30).grid(row=3, column=1, sticky=tk.W, pady=2)
         
-        ttk.Label(conn_frame, text="Port:").grid(row=4, column=0, sticky=tk.W, pady=2)
-        self.obs_port_var = tk.StringVar(value="4444")
+        ttk.Label(conn_frame, text="Port:").grid(row=5, column=0, sticky=tk.W, pady=2)
+        self.obs_port_var = tk.StringVar(value="4455")
         ttk.Entry(conn_frame, textvariable=self.obs_port_var, width=30).grid(row=4, column=1, sticky=tk.W, pady=2)
         
-        ttk.Label(conn_frame, text="Password:").grid(row=5, column=0, sticky=tk.W, pady=2)
+        ttk.Label(conn_frame, text="Password:").grid(row=6, column=0, sticky=tk.W, pady=2)
         self.obs_password_var = tk.StringVar()
         ttk.Entry(conn_frame, textvariable=self.obs_password_var, width=30, show="*").grid(row=5, column=1, sticky=tk.W, pady=2)
         
@@ -287,7 +296,7 @@ class FTCSwitcherGUI:
         ttk.Button(button_frame, text="Save Config", command=self.save_config).pack(side=tk.LEFT, padx=5)
         
         # Status indicator
-        self.status_var = tk.StringVar(value="Status: Not Running")
+        self.status_var = tk.StringVar(value="Status: Not Running 🔴")
         status_label = ttk.Label(button_frame, textvariable=self.status_var)
         status_label.pack(side=tk.RIGHT, padx=5)
         
@@ -344,6 +353,7 @@ class FTCSwitcherGUI:
     def save_config(self):
         config = {
             "event_code": self.event_code_var.get(),
+            "scoring_host": self.scoring_host_var.get(),
             "obs_host": self.obs_host_var.get(),
             "obs_port": self.obs_port_var.get(),
             "obs_password": self.obs_password_var.get(),
@@ -364,8 +374,9 @@ class FTCSwitcherGUI:
                 config = json.load(f)
                 
             self.event_code_var.set(config.get("event_code", ""))
+            self.scoring_host_var.set(config.get("scoring_host", "localhost"))
             self.obs_host_var.set(config.get("obs_host", "localhost"))
-            self.obs_port_var.set(config.get("obs_port", "4444"))
+            self.obs_port_var.set(config.get("obs_port", "4455"))
             self.obs_password_var.set(config.get("obs_password", ""))
             
             # Load scene mappings
@@ -389,6 +400,7 @@ class FTCSwitcherGUI:
     def start_monitoring(self):
         # Get configuration values
         event_code = self.event_code_var.get()
+        scoring_host = self.scoring_host_var.get()
         obs_host = self.obs_host_var.get()
         obs_port = self.obs_port_var.get()
         obs_password = self.obs_password_var.get()
@@ -406,6 +418,7 @@ class FTCSwitcherGUI:
         # Create switcher instance
         self.switcher = FTCFieldSwitcher(
             event_code=event_code,
+            scoring_host=scoring_host,
             obs_host=obs_host,
             obs_port=obs_port,
             obs_password=obs_password
@@ -427,7 +440,7 @@ class FTCSwitcherGUI:
         # Update UI state
         self.start_button.config(state=tk.DISABLED)
         self.stop_button.config(state=tk.NORMAL)
-        self.status_var.set("Status: Running")
+        self.status_var.set("Status: Running 🟢")
         
         self.log("Monitoring started")
         
@@ -471,7 +484,7 @@ class FTCSwitcherGUI:
         """Update UI elements after monitoring has stopped"""
         self.start_button.config(state=tk.NORMAL)
         self.stop_button.config(state=tk.DISABLED)
-        self.status_var.set("Status: Not Running")
+        self.status_var.set("Status: Not Running 🔴")
         self.log("Monitoring stopped")
     
     def on_closing(self):

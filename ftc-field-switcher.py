@@ -7,17 +7,20 @@ import obswebsocket
 from obswebsocket import requests as obsrequests
 
 class FTCFieldSwitcher:
-    def __init__(self, event_code, obs_host="localhost", obs_port=4444, obs_password=""):
+    def __init__(self, event_code, scoring_host="localhost", obs_host="localhost", obs_port=4455, obs_password=""):
         """
         Initialize the FTC Field Switcher with WebSocket connection details and OBS parameters
         
         Args:
             event_code: FTC event code for the WebSocket connection
+            scoring_host: Host address for the FTC scoring system (default: localhost)
             obs_host: OBS WebSocket host (default: localhost)
-            obs_port: OBS WebSocket port (default: 4444)
+            obs_port: OBS WebSocket port (default: 4455)
             obs_password: OBS WebSocket password (default: empty string)
         """
-        self.ftc_ws_url = f"ws://localhost:8080/stream/display/command/?code={event_code}"
+        self.scoring_host = scoring_host
+        self.ftc_ws_url = f"ws://{scoring_host}:8080/stream/display/command/?code={event_code}"
+        self.event_code = event_code
         self.obs_host = obs_host
         self.obs_port = obs_port
         self.obs_password = obs_password
@@ -26,7 +29,6 @@ class FTCFieldSwitcher:
         self.field_scene_mapping = {
             1: "Field 1",
             2: "Field 2",
-            # Add more field-to-scene mappings as needed
         }
         self.running = False
         self.ftc_websocket = None
@@ -181,14 +183,13 @@ async def shutdown_task():
 
 # Example usage
 async def main():
-    # Replace with your actual FTC event code
-    EVENT_CODE = "your_event_code_here"
     
     # Create the switcher
     switcher = FTCFieldSwitcher(
-        event_code=EVENT_CODE,
+        event_code="your_event_code_here", # Replace with your actual FTC event code
+        scoring_host="localhost",
         obs_host="localhost", 
-        obs_port=4444,
+        obs_port=4455,
         obs_password="your_password_here"  # Set your OBS WebSocket password
     )
     

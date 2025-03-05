@@ -14,7 +14,7 @@ gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Gdk, Gio, GObject
 
 class FTCFieldSwitcher:
-    def __init__(self, event_code, scoring_host="localhost", obs_host="localhost", obs_port=4444, obs_password=""):
+    def __init__(self, event_code, scoring_host="localhost", obs_host="localhost", obs_port=4455, obs_password=""):
         """
         Initialize the FTC Field Switcher with WebSocket connection details and OBS parameters
         
@@ -22,7 +22,7 @@ class FTCFieldSwitcher:
             event_code: FTC event code for the WebSocket connection
             scoring_host: Host address for the FTC scoring system (default: localhost)
             obs_host: OBS WebSocket host (default: localhost)
-            obs_port: OBS WebSocket port (default: 4444)
+            obs_port: OBS WebSocket port (default: 4455)
             obs_password: OBS WebSocket password (default: empty string)
         """
         self.scoring_host = scoring_host
@@ -34,8 +34,8 @@ class FTCFieldSwitcher:
         self.obs_ws = None
         self.current_field = None
         self.field_scene_mapping = {
-            1: "Field 1 Scene",
-            2: "Field 2 Scene",
+            1: "Field 1",
+            2: "Field 2",
         }
         self.running = False
         self.ftc_websocket = None
@@ -359,7 +359,7 @@ class FTCSwitcherWindow(Adw.ApplicationWindow):
         
         # Port
         port_row = Adw.EntryRow(title="Port")
-        port_row.set_text("4444")
+        port_row.set_text("4455")
         self.obs_port_entry = port_row
         port_row.connect("changed", self.on_config_changed)
         obs_group.add(port_row)
@@ -623,7 +623,7 @@ class FTCSwitcherWindow(Adw.ApplicationWindow):
             self.event_code_entry.set_text(config.get("event_code", ""))
             self.scoring_host_entry.set_text(config.get("scoring_host", "localhost"))
             self.obs_host_entry.set_text(config.get("obs_host", "localhost"))
-            self.obs_port_entry.set_text(config.get("obs_port", "4444"))
+            self.obs_port_entry.set_text(config.get("obs_port", "4455"))
             self.obs_password_entry.set_text(config.get("obs_password", ""))
             
             # Load scene mappings
