@@ -259,7 +259,7 @@ class FTCSwitcherGUI:
         # Create mapping entries for fields 1 and 2
         self.scene_mappings = {}
         for i in range(1, 3):
-            ttk.Label(mapping_entries_frame, text=f"Field {i}:").grid(row=i-1, column=0, sticky=tk.W, pady=2)
+            ttk.Label(mapping_entries_frame, text=f"Field {i} Scene:").grid(row=i-1, column=0, sticky=tk.W, pady=2)
             scene_var = tk.StringVar(value=f"Field {i}")
             ttk.Entry(mapping_entries_frame, textvariable=scene_var, width=30).grid(row=i-1, column=1, sticky=tk.W, pady=2)
             self.scene_mappings[i] = scene_var
