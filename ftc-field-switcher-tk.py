@@ -235,15 +235,15 @@ class FTCSwitcherGUI:
         
         ttk.Label(conn_frame, text="Host:").grid(row=4, column=0, sticky=tk.W, pady=2)
         self.obs_host_var = tk.StringVar(value="localhost")
-        ttk.Entry(conn_frame, textvariable=self.obs_host_var, width=30).grid(row=3, column=1, sticky=tk.W, pady=2)
+        ttk.Entry(conn_frame, textvariable=self.obs_host_var, width=30).grid(row=4, column=1, sticky=tk.W, pady=2)
         
         ttk.Label(conn_frame, text="Port:").grid(row=5, column=0, sticky=tk.W, pady=2)
         self.obs_port_var = tk.StringVar(value="4455")
-        ttk.Entry(conn_frame, textvariable=self.obs_port_var, width=30).grid(row=4, column=1, sticky=tk.W, pady=2)
+        ttk.Entry(conn_frame, textvariable=self.obs_port_var, width=30).grid(row=5, column=1, sticky=tk.W, pady=2)
         
         ttk.Label(conn_frame, text="Password:").grid(row=6, column=0, sticky=tk.W, pady=2)
         self.obs_password_var = tk.StringVar()
-        ttk.Entry(conn_frame, textvariable=self.obs_password_var, width=30, show="*").grid(row=5, column=1, sticky=tk.W, pady=2)
+        ttk.Entry(conn_frame, textvariable=self.obs_password_var, width=30, show="*").grid(row=6, column=1, sticky=tk.W, pady=2)
         
         # Scene Mapping tab
         mapping_frame = ttk.Frame(notebook, padding="10")
