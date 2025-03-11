@@ -323,6 +323,10 @@ class FTCSwitcherWindow(Adw.ApplicationWindow):
         about_action = Gio.SimpleAction.new("about", None)
         about_action.connect("activate", self.on_about)
         self.get_application().add_action(about_action)
+
+        quit_action = Gio.SimpleAction.new("quit", None)
+        quit_action.connect("activate", self.on_quit_action)
+        self.get_application().add_action(quit_action)
         
     def create_connection_page(self):
         page_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
@@ -600,6 +604,9 @@ class FTCSwitcherWindow(Adw.ApplicationWindow):
             license_type=Gtk.License.MIT_X11
         )
         about.present()
+
+    def on_quit_action(self, _action, _pspec):
+        self.get_application().quit()
 
     def _do_save_config(self):
         self.save_config()
