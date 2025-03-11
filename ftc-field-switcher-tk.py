@@ -13,19 +13,21 @@ import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 
 class FTCFieldSwitcher:
-    def __init__(self, event_code, scoring_host="localhost", obs_host="localhost", obs_port=4455, obs_password=""):
+    def __init__(self, event_code, scoring_host="localhost", scoring_port=80, obs_host="localhost", obs_port=4455, obs_password=""):
         """
         Initialize the FTC Field Switcher with WebSocket connection details and OBS parameters
         
         Args:
             event_code: FTC event code for the WebSocket connection
             scoring_host: Host address for the FTC scoring system (default: localhost)
+            scoring_port: Port for the FTC scoring system (default: 80)
             obs_host: OBS WebSocket host (default: localhost)
             obs_port: OBS WebSocket port (default: 4455)
             obs_password: OBS WebSocket password (default: empty string)
         """
         self.scoring_host = scoring_host
-        self.ftc_ws_url = f"ws://{scoring_host}:8080/stream/display/command/?code={event_code}"
+        self.scoring_port = scoring_port
+        self.ftc_ws_url = f"ws://{scoring_host}:{scoring_port}/stream/display/command/?code={event_code}"
         self.event_code = event_code
         self.obs_host = obs_host
         self.obs_port = obs_port
@@ -230,20 +232,24 @@ class FTCSwitcherGUI:
         self.scoring_host_var = tk.StringVar(value="localhost")
         ttk.Entry(conn_frame, textvariable=self.scoring_host_var, width=30).grid(row=2, column=1, sticky=tk.W, pady=2)
 
+        ttk.Label(conn_frame, text="Port:").grid(row=2, column=2, sticky=tk.W, pady=2)
+        self.scoring_port_var = tk.StringVar(value="80")
+        ttk.Entry(conn_frame, textvariable=self.scoring_port_var, width=6).grid(row=2, column=3, sticky=tk.W, pady=2)
+
         # OBS Settings
         ttk.Label(conn_frame, text="OBS Settings", font=("", 12, "bold")).grid(row=3, column=0, columnspan=2, sticky=tk.W, pady=(10, 5))
         
-        ttk.Label(conn_frame, text="Host:").grid(row=4, column=0, sticky=tk.W, pady=2)
+        ttk.Label(conn_frame, text="OBS WebSocket Host:").grid(row=4, column=0, sticky=tk.W, pady=2)
         self.obs_host_var = tk.StringVar(value="localhost")
         ttk.Entry(conn_frame, textvariable=self.obs_host_var, width=30).grid(row=4, column=1, sticky=tk.W, pady=2)
         
-        ttk.Label(conn_frame, text="Port:").grid(row=5, column=0, sticky=tk.W, pady=2)
+        ttk.Label(conn_frame, text="Port:").grid(row=4, column=2, sticky=tk.W, pady=2)
         self.obs_port_var = tk.StringVar(value="4455")
-        ttk.Entry(conn_frame, textvariable=self.obs_port_var, width=30).grid(row=5, column=1, sticky=tk.W, pady=2)
+        ttk.Entry(conn_frame, textvariable=self.obs_port_var, width=6).grid(row=4, column=3, sticky=tk.W, pady=2)
         
-        ttk.Label(conn_frame, text="Password:").grid(row=6, column=0, sticky=tk.W, pady=2)
+        ttk.Label(conn_frame, text="Password:").grid(row=5, column=0, sticky=tk.W, pady=2)
         self.obs_password_var = tk.StringVar()
-        ttk.Entry(conn_frame, textvariable=self.obs_password_var, width=30, show="*").grid(row=6, column=1, sticky=tk.W, pady=2)
+        ttk.Entry(conn_frame, textvariable=self.obs_password_var, width=30, show="*").grid(row=5, column=1, sticky=tk.W, pady=2)
         
         # Scene Mapping tab
         mapping_frame = ttk.Frame(notebook, padding="10")
@@ -354,6 +360,7 @@ class FTCSwitcherGUI:
         config = {
             "event_code": self.event_code_var.get(),
             "scoring_host": self.scoring_host_var.get(),
+            "scoring_port": self.scoring_port_var.get(),
             "obs_host": self.obs_host_var.get(),
             "obs_port": self.obs_port_var.get(),
             "obs_password": self.obs_password_var.get(),
@@ -375,6 +382,7 @@ class FTCSwitcherGUI:
                 
             self.event_code_var.set(config.get("event_code", ""))
             self.scoring_host_var.set(config.get("scoring_host", "localhost"))
+            self.scoring_port_var.set(config.get("scoring_port", "80"))
             self.obs_host_var.set(config.get("obs_host", "localhost"))
             self.obs_port_var.set(config.get("obs_port", "4455"))
             self.obs_password_var.set(config.get("obs_password", ""))
@@ -401,6 +409,7 @@ class FTCSwitcherGUI:
         # Get configuration values
         event_code = self.event_code_var.get()
         scoring_host = self.scoring_host_var.get()
+        scoring_port = self.scoring_port_var.get()
         obs_host = self.obs_host_var.get()
         obs_port = self.obs_port_var.get()
         obs_password = self.obs_password_var.get()
@@ -419,6 +428,7 @@ class FTCSwitcherGUI:
         self.switcher = FTCFieldSwitcher(
             event_code=event_code,
             scoring_host=scoring_host,
+            scoring_port=scoring_port,
             obs_host=obs_host,
             obs_port=obs_port,
             obs_password=obs_password

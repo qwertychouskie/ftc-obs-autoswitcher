@@ -7,19 +7,21 @@ import obswebsocket
 from obswebsocket import requests as obsrequests
 
 class FTCFieldSwitcher:
-    def __init__(self, event_code, scoring_host="localhost", obs_host="localhost", obs_port=4455, obs_password=""):
+    def __init__(self, event_code, scoring_host="localhost", scoring_port=80, obs_host="localhost", obs_port=4455, obs_password=""):
         """
         Initialize the FTC Field Switcher with WebSocket connection details and OBS parameters
         
         Args:
             event_code: FTC event code for the WebSocket connection
             scoring_host: Host address for the FTC scoring system (default: localhost)
+            scoring_port: Port for the FTC scoring system (default: 80)
             obs_host: OBS WebSocket host (default: localhost)
             obs_port: OBS WebSocket port (default: 4455)
             obs_password: OBS WebSocket password (default: empty string)
         """
         self.scoring_host = scoring_host
-        self.ftc_ws_url = f"ws://{scoring_host}:8080/stream/display/command/?code={event_code}"
+        self.scoring_port = scoring_port
+        self.ftc_ws_url = f"ws://{scoring_host}:{scoring_port}/stream/display/command/?code={event_code}"
         self.event_code = event_code
         self.obs_host = obs_host
         self.obs_port = obs_port
@@ -188,6 +190,7 @@ async def main():
     switcher = FTCFieldSwitcher(
         event_code="your_event_code_here", # Replace with your actual FTC event code
         scoring_host="localhost",
+        scoring_port="80",
         obs_host="localhost", 
         obs_port=4455,
         obs_password="your_password_here"  # Set your OBS WebSocket password

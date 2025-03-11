@@ -14,19 +14,21 @@ gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Gdk, Gio, GObject
 
 class FTCFieldSwitcher:
-    def __init__(self, event_code, scoring_host="localhost", obs_host="localhost", obs_port=4455, obs_password=""):
+    def __init__(self, event_code, scoring_host="localhost", scoring_port=80, obs_host="localhost", obs_port=4455, obs_password=""):
         """
         Initialize the FTC Field Switcher with WebSocket connection details and OBS parameters
         
         Args:
             event_code: FTC event code for the WebSocket connection
             scoring_host: Host address for the FTC scoring system (default: localhost)
+            scoring_port: Port for the FTC scoring system (default: 80)
             obs_host: OBS WebSocket host (default: localhost)
             obs_port: OBS WebSocket port (default: 4455)
             obs_password: OBS WebSocket password (default: empty string)
         """
         self.scoring_host = scoring_host
-        self.ftc_ws_url = f"ws://{scoring_host}:8080/stream/display/command/?code={event_code}"
+        self.scoring_port = scoring_port
+        self.ftc_ws_url = f"ws://{scoring_host}:{scoring_port}/stream/display/command/?code={event_code}"
         self.event_code = event_code
         self.obs_host = obs_host
         self.obs_port = obs_port
@@ -174,7 +176,7 @@ class FTCFieldSwitcher:
         try:
             async with websockets.connect(self.ftc_ws_url) as websocket:
                 self.ftc_websocket = websocket
-                self.log(f"Connected to FTC scoring system WebSocket at {self.scoring_host}")
+                self.log(f"Connected to FTC scoring system WebSocket at {self.scoring_host}:{self.scoring_port}")
                 self.log(f"Monitoring started")
                 status_label.set_text("Status: Connected 🟢")
                 
@@ -345,13 +347,20 @@ class FTCSwitcherWindow(Adw.ApplicationWindow):
         self.scoring_host_entry = scoring_host_row
         scoring_host_row.connect("changed", self.on_config_changed)
         ftc_group.add(scoring_host_row)
+
+        # Scoring System Port
+        scoring_port_row = Adw.EntryRow(title="Scoring System Port")
+        scoring_port_row.set_text("80")
+        self.scoring_port_entry = scoring_port_row
+        scoring_port_row.connect("changed", self.on_config_changed)
+        ftc_group.add(scoring_port_row)
         
         # OBS Settings
         obs_group = Adw.PreferencesGroup(title="OBS Settings")
         page_box.append(obs_group)
         
         # Host
-        host_row = Adw.EntryRow(title="Host")
+        host_row = Adw.EntryRow(title="OBS WebSocket Host")
         host_row.set_text("localhost")
         self.obs_host_entry = host_row
         host_row.connect("changed", self.on_config_changed)
@@ -601,6 +610,7 @@ class FTCSwitcherWindow(Adw.ApplicationWindow):
         config = {
             "event_code": self.event_code_entry.get_text(),
             "scoring_host": self.scoring_host_entry.get_text(),
+            "scoring_port": self.scoring_port_entry.get_text(),
             "obs_host": self.obs_host_entry.get_text(),
             "obs_port": self.obs_port_entry.get_text(),
             "obs_password": self.obs_password_entry.get_text(),
@@ -622,6 +632,7 @@ class FTCSwitcherWindow(Adw.ApplicationWindow):
                 
             self.event_code_entry.set_text(config.get("event_code", ""))
             self.scoring_host_entry.set_text(config.get("scoring_host", "localhost"))
+            self.scoring_port_entry.set_text(config.get("scoring_port", "80"))
             self.obs_host_entry.set_text(config.get("obs_host", "localhost"))
             self.obs_port_entry.set_text(config.get("obs_port", "4455"))
             self.obs_password_entry.set_text(config.get("obs_password", ""))
@@ -651,6 +662,7 @@ class FTCSwitcherWindow(Adw.ApplicationWindow):
         # Get configuration values
         event_code = self.event_code_entry.get_text()
         scoring_host = self.scoring_host_entry.get_text()
+        scoring_port = self.scoring_port_entry.get_text()
         obs_host = self.obs_host_entry.get_text()
         obs_port = self.obs_port_entry.get_text()
         obs_password = self.obs_password_entry.get_text()
@@ -669,6 +681,7 @@ class FTCSwitcherWindow(Adw.ApplicationWindow):
         self.switcher = FTCFieldSwitcher(
             event_code=event_code,
             scoring_host=scoring_host,
+            scoring_port=scoring_port,
             obs_host=obs_host,
             obs_port=obs_port,
             obs_password=obs_password
